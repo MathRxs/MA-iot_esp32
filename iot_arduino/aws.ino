@@ -16,11 +16,15 @@
 #include <Adafruit_Sensor.h>
 #include "Adafruit_BME680.h"
 Adafruit_BME680 bme; 
-#define PUBLISH_INTERVAL 400000  // 4 seconds
+#define PUBLISH_INTERVAL_SECONDS (15*60)
+#define PUBLISH_INTERVAL (PUBLISH_INTERVAL_SECONDS*1000)  // 4 seconds
 #define SEALEVELPRESSURE_HPA (1013.25)
 WiFiClientSecure net = WiFiClientSecure();
 MQTTClient client = MQTTClient(256);
 
+void setup_analog(){
+  
+}
 unsigned long lastPublishTime = 0;
 void setup_bme() {
   Serial.begin(115200);
@@ -63,10 +67,21 @@ void setup() {
 void loop() {
   client.loop();
 
-  if (millis() - lastPublishTime > PUBLISH_INTERVAL) {
-    sendToAWS();
-    lastPublishTime = millis();
+  // if (millis() - lastPublishTime > PUBLISH_INTERVAL) {
+  //   sendToAWS();
+  //   lastPublishTime = millis();
+  // }
+  int sensorValue = analogRead(A0);
+  
+  // The ADC range is 0-4095 for 0-3.1V
+  float outputVoltage = (sensorValue / 4095.0) * 3.3;
+  Serial.println(outputVoltage);
+  float windspeed = (outputVoltage - 0.4) /1.6*32.4;
+  if(windspeed<0){
+    windspeed=0;
   }
+  Serial.println(windspeed);
+
 }
 void read_data() {
   // Tell BME680 to begin measurement.
@@ -124,16 +139,18 @@ void sendToAWS() {
   message["state"]["reported"]["pressure"] = bme.pressure / 100.0;
   message["state"]["reported"]["gas"] = bme.gas_resistance / 1000.0;
   message["state"]["reported"]["altitude"] = bme.readAltitude(SEALEVELPRESSURE_HPA);
+  message["state"]["reported"]["max_windspeed"] = 
+  message["state"]["reported"]["mean_windspeed"] = 
   char messageBuffer[512];
   serializeJson(message, messageBuffer);  // print to client
 
   client.publish(aws_shadow_topic, messageBuffer);
 
-  Serial.println("sent:");
-  Serial.print("- topic: ");
-  Serial.println(aws_shadow_topic);
-  Serial.print("- payload:");
-  Serial.println(messageBuffer);
+  // Serial.println("sent:");
+  // Serial.print("- topic: ");
+  // Serial.println(aws_shadow_topic);
+  // Serial.print("- payload:");
+  // Serial.println(messageBuffer);
 }
 
 void messageHandler(String &topic, String &payload) {
