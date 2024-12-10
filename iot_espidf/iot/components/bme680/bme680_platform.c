@@ -51,6 +51,8 @@
 // platform specific defines, includes and functions
 
 #include "bme680_platform.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 SemaphoreHandle_t spi_sem = 0;
 

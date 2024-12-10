@@ -14,6 +14,8 @@
 #include "esp_system.h"
 #include "bme680.h"
 #include "wifi.h"
+#include "aws.h"
+#include "bme680_task.h"
 /**
  * Simple example with one sensor connected either to I2C bus 0 or
  * SPI bus 1.
@@ -95,7 +97,6 @@ static bme680_sensor_t* sensor = 0;
 void user_task(void *pvParameters)
 {
     bme680_values_float_t values;
-
     TickType_t last_wakeup = xTaskGetTickCount();
 
     // as long as sensor configuration isn't changed, duration is constant
@@ -126,6 +127,62 @@ void user_task(void *pvParameters)
 
 /* -- main program ------------------------------------------------- */
 
+// void user_init(void)
+// {
+//     // Set UART Parameter.
+//     uart_set_baud(0, 115200);
+//     // Give the UART some time to settle
+//     vTaskDelay(1);
+    
+//     /** -- MANDATORY PART -- */
+
+//     wifi_init_sta();
+
+//     // Init all I2C bus interfaces at which BME680 sensors are connected
+//     i2c_init(I2C_BUS, I2C_SCL_PIN, I2C_SDA_PIN, I2C_FREQ);
+
+//     // init the sensor with slave address BME680_I2C_ADDRESS_2 connected to I2C_BUS.
+//     sensor = bme680_init_sensor (I2C_BUS, BME680_I2C_ADDRESS_1, 0);
+
+//     // aws();
+//     if (sensor)
+//     {
+//         /** -- SENSOR CONFIGURATION PART (optional) --- */
+
+//         // Changes the oversampling rates to 4x oversampling for temperature
+//         // and 2x oversampling for humidity. Pressure measurement is skipped.
+//         bme680_set_oversampling_rates(sensor, osr_4x, osr_none, osr_2x);
+
+//         // Change the IIR filter size for temperature and pressure to 7.
+//         bme680_set_filter_size(sensor, iir_size_7);
+
+//         // Change the heater profile 0 to 200 degree Celcius for 100 ms.
+//         bme680_set_heater_profile (sensor, 0, 200, 100);
+//         bme680_use_heater_profile (sensor, 0);
+
+//         // Set ambient temperature to 10 degree Celsius
+//         bme680_set_ambient_temperature (sensor, 10);
+            
+//         /** -- TASK CREATION PART --- */
+
+//         // must be done last to avoid concurrency situations with the sensor 
+//         // configuration part
+
+//         // Create a task that uses the sensor
+//         xTaskCreate(user_task, "user_task", TASK_STACK_DEPTH, NULL, 2, NULL);
+//     }
+//     else
+//         printf("Could not initialize BME680 sensor\n");
+// }
+// void app_main(void)
+// {
+//     printf("Hello world!\n");
+
+//     user_init();
+//     vTaskDelay(portMAX_DELAY);
+// }
+
+
 void user_init(void)
 {
     // Set UART Parameter.
@@ -136,47 +193,8 @@ void user_init(void)
     /** -- MANDATORY PART -- */
 
     wifi_init_sta();
+    bme_task_init_sensor();
+    xTaskCreate(bme_task, "bme_task", 4096, NULL, 2, NULL);
+    xTaskCreate(aws_task, "aws_task", 16000, NULL, 2, NULL);
 
-    // Init all I2C bus interfaces at which BME680 sensors are connected
-    i2c_init(I2C_BUS, I2C_SCL_PIN, I2C_SDA_PIN, I2C_FREQ);
-
-    // init the sensor with slave address BME680_I2C_ADDRESS_2 connected to I2C_BUS.
-    sensor = bme680_init_sensor (I2C_BUS, BME680_I2C_ADDRESS_1, 0);
-
-
-    if (sensor)
-    {
-        /** -- SENSOR CONFIGURATION PART (optional) --- */
-
-        // Changes the oversampling rates to 4x oversampling for temperature
-        // and 2x oversampling for humidity. Pressure measurement is skipped.
-        bme680_set_oversampling_rates(sensor, osr_4x, osr_none, osr_2x);
-
-        // Change the IIR filter size for temperature and pressure to 7.
-        bme680_set_filter_size(sensor, iir_size_7);
-
-        // Change the heater profile 0 to 200 degree Celcius for 100 ms.
-        bme680_set_heater_profile (sensor, 0, 200, 100);
-        bme680_use_heater_profile (sensor, 0);
-
-        // Set ambient temperature to 10 degree Celsius
-        bme680_set_ambient_temperature (sensor, 10);
-            
-        /** -- TASK CREATION PART --- */
-
-        // must be done last to avoid concurrency situations with the sensor 
-        // configuration part
-
-        // Create a task that uses the sensor
-        xTaskCreate(user_task, "user_task", TASK_STACK_DEPTH, NULL, 2, NULL);
-    }
-    else
-        printf("Could not initialize BME680 sensor\n");
 }
-// void app_main(void)
-// {
-//     printf("Hello world!\n");
-
-//     user_init();
-//     vTaskDelay(portMAX_DELAY);
-// }

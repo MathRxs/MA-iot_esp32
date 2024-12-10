@@ -98,6 +98,7 @@ extern "C"
 {
 #endif
 
+
 /** --------------------------------------------------------------------------
  *
  * Functional Description of the BME680 sensor
