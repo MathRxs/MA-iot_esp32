@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 #include "secrets.h"
 #include "bme680.h"
-#include "nvs.h"
+#include "nvs.hpp"
 
 #define AWS_IOT_CLAIM_TOPIC "$aws/certificates/create/json"
 #define AWS_IOT_RECIEVE_CERT_TOPIC "$aws/certificates/create/json/accepted"
@@ -15,7 +15,7 @@
 
 static void AWS_claim_certificate();
 static void messageHandler(String& topic, String& payload);
-static void AWS_chip_id(String* Chip_id);
+
 static void AWS_register_device(const char* certificateOwnershipToken, const char* certificateId);
 
 
@@ -120,12 +120,13 @@ static void messageHandler(String& topic, String& payload) {
     ESP.restart();
   }
 }
+
 static void AWS_claim_certificate() {
   client.subscribe(AWS_IOT_RECIEVE_CERT_TOPIC);
   client.publish(AWS_IOT_CLAIM_TOPIC, "");
 }
 
-static void AWS_chip_id(String* Chip_id) {
+void AWS_chip_id(String* Chip_id) {
   uint64_t chipid = ESP.getEfuseMac();
   char unique_id[13];
   snprintf(unique_id, 13, "%04X%08X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
@@ -146,3 +147,4 @@ static void AWS_register_device(const char* certificateOwnershipToken, const cha
   client.publish(AWS_IOT_REGISTER_TOPIC, messageBuffer);
   Serial.println("Device registered to AWS!");
 }
+

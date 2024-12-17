@@ -1,4 +1,5 @@
 #include <Preferences.h>
+#include "nvs.hpp"
 Preferences prefs;
 
 void NVS_setup() {
@@ -38,6 +39,31 @@ void NVS_set_private_key(String private_key) {
     prefs.putString("private_key", private_key);
 }
 
+void NVS_claim_certificate(String *certificate) {
+    *certificate = prefs.getString("claim_cert");
+}
+
+void NVS_set_claim_certificate(String certificate) {
+    prefs.putString("claim_cert", certificate);
+}
+
+void NVS_set_claim_private_key(String private_key) {
+    prefs.putString("claim_private_key", private_key);
+}
+
+void NVS_claim_private_key(String *private_key) {
+    *private_key = prefs.getString("claim_private_key");
+}
+
+void set_not_first_boot() {
+    prefs.putString("first_boot", "false");
+}
+
+bool is_first_boot() {
+    String oe = prefs.getString("first_boot","true");
+    Serial.println("AAAAAAAAAAAAAAA first_boot: " + oe);
+    return oe == "true";
+}
 void NVS_clear() {
     prefs.clear();
 }

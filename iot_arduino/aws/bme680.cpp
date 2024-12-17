@@ -5,7 +5,7 @@
 Adafruit_BME680 bme;
 
 void BME680_setup() {
-    Serial.begin(115200);
+    
     while (!bme.begin(0x76)) {
         Serial.println("Could not find a valid BME680 sensor, check wiring!");
         delay(1000);
